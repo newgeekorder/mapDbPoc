@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:context="http://www.springframework.org/schema/context" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<jms:activemq-connector name="Active_MQ"
+		brokerURL="tcp://localhost:61616" validateConnections="true" doc:name="Active MQ" />
+	<spring:beans>
+		<spring:bean id="storedProcedureComponent"
+			class="com.umg.storedprocedure.mule.StoredProcedureComponent">
+			<spring:property name="mapper" ref="storedProcedureMapper" />
+		</spring:bean>
+		<spring:bean id="storedProcedureMapper"
+			class="com.umg.storedprocedure.StoredProcedureMapper" scope="singleton"
+			init-method="init" destroy-method="destroy">
+			<spring:property name="cacheDriver" ref="inMemCacheDriver" />
+			<spring:property name="tableInfoList" ref="tableInfoList" />
+			<spring:property name="cacheDirectoryPath" value="." />
+			<spring:property name="dbName" value="${db.name}" />
+			<spring:property name="cacheDumpDirectoryPath" value="./tmp-cache-dump-dir" />
+			<spring:property name="dataSource" ref="dataSource" />
+		</spring:bean>
+		<spring:bean name="isrcTableInfo" class="com.umg.db2mapdb.TableInfo">
+			<spring:property name="tableName"
+				value="#{T(com.umg.db2mapdb.util.Utils).CACHE_NAME_R2_ISRC_COUNTRY_FIN}" />
+			<spring:property name="allTableColumnNames"
+				value="#{T(com.umg.db2mapdb.util.Utils).ISRC_TABLE_COLUMN_NAMES}" />
+			<spring:property name="keyTableColumnNames"
+				value="#{T(com.umg.db2mapdb.util.Utils).ISRC_KEY_COLUMN_NAMES}" />
+		</spring:bean>
+		<spring:bean name="upcTableInfo" class="com.umg.db2mapdb.TableInfo">
+			<spring:property name="tableName"
+				value="#{T(com.umg.db2mapdb.util.Utils).CACHE_NAME_R2_UPC_COUNTRY_FIN}" />
+			<spring:property name="allTableColumnNames"
+				value="#{T(com.umg.db2mapdb.util.Utils).UPC_TABLE_COLUMN_NAMES}" />
+			<spring:property name="keyTableColumnNames"
+				value="#{T(com.umg.db2mapdb.util.Utils).UPC_KEY_COLUMN_NAMES}" />
+		</spring:bean>
+		<spring:bean name="zcoTableInfo" class="com.umg.db2mapdb.TableInfo">
+			<spring:property name="tableName"
+				value="#{T(com.umg.db2mapdb.util.Utils).CACHE_NAME_ZCO_COPA_DEF_CC}" />
+			<spring:property name="allTableColumnNames"
+				value="#{T(com.umg.db2mapdb.util.Utils).ZCO_TABLE_COLUMN_NAMES}" />
+			<spring:property name="keyTableColumnNames"
+				value="#{T(com.umg.db2mapdb.util.Utils).ZCO_KEY_COLUMN_NAMES}" />
+		</spring:bean>
+		<spring:bean id="tableInfoList" class="java.util.ArrayList">
+			<spring:constructor-arg>
+				<spring:list>
+					<spring:ref bean="isrcTableInfo" />
+					<spring:ref bean="upcTableInfo" />
+					<spring:ref bean="zcoTableInfo" />
+				</spring:list>
+			</spring:constructor-arg>
+		</spring:bean>
+
+<!-- 		am using init method instead: -->
+<!-- 		<spring:bean id="copa3DeriveLabel" class="com.umg.cache.storedprocedure.ports.Copa3DeriveLabel"> -->
+<!-- 			<spring:property name="cacheDriver" ref="inMemCacheDriver" /> -->
+<!-- 		</spring:bean> -->
+
+		<spring:bean id="dataSource"
+			class="com.microsoft.sqlserver.jdbc.SQLServerDataSource">
+			<spring:property name="URL"
+				value="jdbc:sqlserver://${db.host}:${db.port};database=${db.name};user=${db.username};password=${db.password};integratedSecurity=false" />
+		</spring:bean>
+		<spring:bean id="inMemCacheDriver" class="com.umg.cache.InMemCacheDriver" />
+	</spring:beans>
+    <context:property-placeholder location="classpath:db/${db.propfile}"/>
+
+<!--     <db:generic-config name="Generic_Database_Configuration" dataSource-ref="dataSource" doc:name="Generic Database Configuration"/> -->
+
+<!--     <flow name="cacheFlow1"> -->
+<!--         <poll doc:name="Poll"> -->
+<!--             <fixed-frequency-scheduler frequency="15000"/> -->
+<!--             <db:select config-ref="Generic_Database_Configuration" doc:name="Database"> -->
+<!--                 <db:parameterized-query><![CDATA[SELECT * FROM [ESDB_UAT_mini].[dbo].[R2_ISRC_COUNTRY_FIN]]]></db:parameterized-query> -->
+<!--             </db:select> -->
+<!--         </poll> -->
+<!--         <logger message="#[payload]" level="INFO" doc:name="Logger"/> -->
+<!--     </flow> -->
+
+	<flow name="cacheFlow">
+		<jms:inbound-endpoint queue="storedProcedureCalls"
+			connector-ref="Active_MQ" doc:name="JMS" />
+		<component doc:name="Java">
+			<spring-object bean="storedProcedureComponent" />
+		</component>
+        <logger message="Payload after storedProcedure #[payload]" level="INFO" doc:name="Logger"/>
+		<jms:outbound-endpoint queue="results"
+			connector-ref="Active_MQ" doc:name="JMS" />
+	</flow>
+</mule>

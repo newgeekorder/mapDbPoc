@@ -1,0 +1,86 @@
+#%RAML 0.8
+title: cacheAPI
+version: 0.1
+
+/cache:
+  /load/file:
+    description: |
+      Loads a cache from file
+    post:
+      body:
+        application/json:
+          example: |
+            {
+              "cacheFileName": "CACHE_FILE",
+              "cacheFileDirectoryPath": "/tmp"
+            }
+      responses:
+        200:
+  /load/db:
+    description: |
+      Loads a cache from db and dumps to file
+    post:
+      body:
+        application/json:
+            example: |
+              {
+                "dbURL": "jdbc:sqlserver://...",
+                "tableName": "ZCO_COPA_DEF_CC",
+                "cacheFileDirectoryPath": "/tmp",
+                "cacheFileName": "ZCO_COPA_DEF_CC"
+              }
+      responses:
+        200:
+  /load:
+    description: |
+      Loads a cache from file, falling back to loading from db (in which case, a dump to file is also made).
+    post:
+      body:
+        application/json:
+            example: |
+              {
+                "dbURL": "jdbc:sqlserver://...",
+                "tableName": "ZCO_COPA_DEF_CC",
+                "cacheFileDirectoryPath": "/tmp",
+                "cacheFileName": "ZCO_COPA_DEF_CC"
+              }
+      responses:
+        200:
+# for size: how much memory on disk? how many record in cache map?
+  /loaded:
+    description: Returns information on loaded caches
+    get:
+      responses:
+        200:
+           body:
+            application/json:
+              example: |
+                {
+                  "loadedCacheCount": "2",
+                  "caches": [
+                    {
+                      "name": "ZCO_COPA_DEF_CC",
+                      "lastLoaded": "Wed Sep 23 14:29:32 BST 2015",
+                      "lastLoadedTimestamp": "1443015204",
+                      "timeToLoad": "11000",
+                      "size": "9000"
+                    },
+                    {
+                      "name": "R2_ISRC_COUNTRY_FIN",
+                      "lastLoaded": "Wed Sep 23 15:29:32 BST 2015",
+                      "lastLoadedTimestamp": "1443015204",
+                      "timeToLoad": "4411000",
+                      "size": "559000"
+                    }
+                  ]
+                }
+  /getfirst/{cacheName}/prefix/{prefix}:
+    description: Returns the first value in the cache with the given name whose key prefix matches the given prefix
+    get:
+      responses:
+        200:
+  /getone/{cacheName}/key/{key}:
+    description: Returns the value of the given key from the given cache name
+    get:
+      responses:
+        200:

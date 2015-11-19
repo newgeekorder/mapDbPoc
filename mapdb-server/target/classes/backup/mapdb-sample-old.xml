@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<db:mysql-config name="MySQL_Configuration" host="localhost"
+		port="3306" user="root" database="umgdb" doc:name="MySQL Configuration" />
+    <spring:beans>
+        <spring:bean id="mapdb" class="com.umg.Mapdb" scope="singleton" init-method="init" destroy-method="cleanUp"/>
+        <spring:bean id="mapDBOperations" class="com.umg.MapDBOperations">
+            <spring:property name="mapdb" ref="mapdb"/>
+        </spring:bean>
+
+        <spring:bean id="cacheBean" class="com.umg.cache.CacheBean">
+            <spring:property name="mapdb" ref="mapdb"/>
+        </spring:bean>
+    </spring:beans>
+
+	<flow name="mapdb-sampleFlow">
+		<http:inbound-endpoint exchange-pattern="request-response"
+			host="localhost" port="8081" path="populate" doc:name="HTTP" />
+		<db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT * FROM clients]]></db:parameterized-query>
+
+		</db:select>
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<component doc:name="Java">
+			<spring-object bean="mapDBOperations" />
+		</component>
+	</flow>
+    <flow name="mapdb-sampleFlow1">
+        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="get" doc:name="HTTP"/>
+        <set-payload value="#[message.inboundProperties['http.relative.path']]" doc:name="Set Payload"/>
+        <component doc:name="Get by id">
+            <spring-object bean="mapDBOperations"/>
+        </component>
+        <logger message="payload after is: #[payload]" level="INFO" doc:name="Payload after"/>
+        <object-to-string-transformer doc:name="Object to String"/>
+    </flow>
+    <flow name="mapdb-sampleFlow2">
+        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="keyset" doc:name="HTTP"/>
+        <set-payload value="#[null]" doc:name="Nullify payload"/>
+        <component doc:name="Get key set">
+            <method-entry-point-resolver>
+            	<include-entry-point method="keySet"/>
+            </method-entry-point-resolver>
+            <spring-object bean="mapDBOperations" />
+        </component>
+        <object-to-string-transformer doc:name="Object to String"/>
+    </flow>
+</mule>

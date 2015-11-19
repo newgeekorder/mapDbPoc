@@ -1,0 +1,10 @@
+INFO  2015-09-22 18:20:54,105 [main] com.umg.storedprocedure.StoredProcedureMapper: Initializing StoredProcedureMapper
+INFO  2015-09-22 18:20:54,105 [main] com.umg.db2mapdb.CacheManager: Cache for R2_ISRC_COUNTRY_FIN not in memory, trying to find file to load at .
+INFO  2015-09-22 18:20:54,106 [main] com.umg.db2mapdb.CacheManager$CacheStore: Cache file R2_ISRC_COUNTRY_FIN exists, trying to load...
+INFO  2015-09-22 18:22:34,948 [main] com.umg.db2mapdb.CacheManager$CacheStore: loading cache R2_ISRC_COUNTRY_FIN took 100798 ms
+INFO  2015-09-22 18:22:34,968 [main] com.umg.db2mapdb.CacheManager: Cache for R2_UPC_COUNTRY_FIN not in memory, trying to find file to load at .
+INFO  2015-09-22 18:22:34,976 [main] com.umg.db2mapdb.CacheManager$CacheStore: Cache file R2_UPC_COUNTRY_FIN exists, trying to load...
+INFO  2015-09-22 18:23:40,489 [main] com.umg.db2mapdb.CacheManager$CacheStore: loading cache R2_UPC_COUNTRY_FIN took 65512 ms
+INFO  2015-09-22 18:23:40,490 [main] com.umg.db2mapdb.CacheManager: Cache for ZCO_COPA_DEF_CC not in memory, trying to find file to load at .
+INFO  2015-09-22 18:23:40,493 [main] com.umg.db2mapdb.CacheManager$CacheStore: Cache file ZCO_COPA_DEF_CC exists, trying to load...
+INFO  2015-09-22 18:23:40,745 [main] com.umg.db2mapdb.CacheManager$CacheStore: loading cache ZCO_COPA_DEF_CC took 252 ms
